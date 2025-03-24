@@ -67,7 +67,6 @@ export default function Resources() {
   useEffect(() => {
     setResourceData(resources.data as ResourceData[]);
     setCrops(crops.data as CropData[]);
-
   }, [setResourceData, resources, setCrops, crops]);
 
   const handleRefresh = async () => {

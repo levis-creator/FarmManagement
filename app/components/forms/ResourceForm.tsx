@@ -24,18 +24,17 @@ export function ResourceForm({ crops }: ResourceFormProps) {
     setValue,
     reset,
     watch,
-    formState: { errors },
+    formState: { errors, isSubmitting },
   } = useForm<ResourceFormData>({
     resolver: zodResolver(ResourceSchema),
     defaultValues: {
-      quantity: 0, // Default quantity
+      quantity: 0,
     },
   });
 
   const isOpen = useAtomValue(formIsOpen);
   const close = useSetAtom(closeForm);
   const refreshData = useSetAtom(fetchResourcesAtom);
-  const [isLoading, setIsLoading] = useState(false);
   const [resource, setResource] = useAtom(resourceAtom);
   const [edit, setEdit] = useAtom(editForm);
 
@@ -45,12 +44,11 @@ export function ResourceForm({ crops }: ResourceFormProps) {
       setValue("name", resource.name);
       setValue("quantity", resource.quantity);
       setValue("type", resource.type);
-      setValue("cropId", resource.cropId);
+      setValue("cropId", resource.cropId as string);
     }
   }, [edit, resource, setValue]);
 
   const onSubmit: SubmitHandler<ResourceFormData> = async (data) => {
-    setIsLoading(true);
     try {
       const url = edit
         ? `${API.EXTERNAL + ENDPOINTS.RESOURCES}/${resource?._id}`
@@ -66,14 +64,10 @@ export function ResourceForm({ crops }: ResourceFormProps) {
 
       if (!response.ok) throw new Error(response.statusText);
 
-      console.log(`Resource ${edit ? "updated" : "added"} successfully!`);
       refreshData();
       handleClose();
     } catch (error) {
       console.error(`Failed to ${edit ? "update" : "add"} resource:`, error);
-      // Consider adding user feedback here (e.g., toast notification)
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -86,7 +80,7 @@ export function ResourceForm({ crops }: ResourceFormProps) {
 
   return (
     <Modal isOpen={isOpen} title={edit ? "Edit Resource" : "Add Resource"} onClose={handleClose}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-md mx-auto p-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-6 max-w-md mx-auto">
         {/* Name Input */}
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">
@@ -95,10 +89,10 @@ export function ResourceForm({ crops }: ResourceFormProps) {
           <Input
             id="name"
             {...register("name")}
-            className="mt-1 block w-full border-green-300 focus:border-green-500 focus:ring-green-500"
+            className="mt-1 w-full border-green-300 focus:border-green-500"
           />
           {errors.name && (
-            <p className="text-sm text-red-600 mt-1">{errors.name.message}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
           )}
         </div>
 
@@ -111,10 +105,10 @@ export function ResourceForm({ crops }: ResourceFormProps) {
             id="quantity"
             type="number"
             {...register("quantity", { valueAsNumber: true })}
-            className="mt-1 block w-full border-green-300 focus:border-green-500 focus:ring-green-500"
+            className="mt-1 w-full border-green-300 focus:border-green-500"
           />
           {errors.quantity && (
-            <p className="text-sm text-red-600 mt-1">{errors.quantity.message}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.quantity.message}</p>
           )}
         </div>
 
@@ -126,10 +120,10 @@ export function ResourceForm({ crops }: ResourceFormProps) {
           <Input
             id="type"
             {...register("type")}
-            className="mt-1 block w-full border-green-300 focus:border-green-500 focus:ring-green-500"
+            className="mt-1 w-full border-green-300 focus:border-green-500"
           />
           {errors.type && (
-            <p className="text-sm text-red-600 mt-1">{errors.type.message}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.type.message}</p>
           )}
         </div>
 
@@ -142,7 +136,7 @@ export function ResourceForm({ crops }: ResourceFormProps) {
             onValueChange={(value) => setValue("cropId", value)}
             value={watch("cropId")}
           >
-            <SelectTrigger className="mt-1 block w-full border-green-300 focus:border-green-500 focus:ring-green-500">
+            <SelectTrigger className="w-full border-green-300 focus:border-green-500">
               <SelectValue placeholder="Select a crop" />
             </SelectTrigger>
             <SelectContent>
@@ -154,22 +148,22 @@ export function ResourceForm({ crops }: ResourceFormProps) {
             </SelectContent>
           </Select>
           {errors.cropId && (
-            <p className="text-sm text-red-600 mt-1">{errors.cropId.message}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.cropId.message}</p>
           )}
         </div>
 
         {/* Submit Button */}
-        <div>
+        <div className="pt-2">
           <Button
             type="submit"
             className="w-full bg-green-600 hover:bg-green-700"
-            disabled={isLoading}
+            disabled={isSubmitting}
           >
-            {isLoading ? (
-              <div className="flex items-center justify-center">
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
+            {isSubmitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {edit ? "Saving..." : "Adding..."}
-              </div>
+              </>
             ) : (
               edit ? "Save Changes" : "Add Resource"
             )}

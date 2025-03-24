@@ -23,11 +23,12 @@ export function ActivityForm({ crops }: { crops: CropData[] }) {
     setValue,
     reset,
     watch,
-    formState: { errors, isDirty },
+    formState: { errors, isDirty, isValid },
   } = useForm<ActivityFormData>({
     resolver: zodResolver(ActivitySchema),
+    mode: "onChange",
     defaultValues: {
-      date: format(new Date(), 'yyyy-MM-dd'), // Default to today's date
+      date: format(new Date(), 'yyyy-MM-dd'),
       cropId: '',
       description: ''
     },
@@ -48,7 +49,11 @@ export function ActivityForm({ crops }: { crops: CropData[] }) {
       setValue("date", format(parseISO(activity.date), 'yyyy-MM-dd'));
       setValue("description", activity.description);
     } else {
-      reset(); // Reset form when not in edit mode
+      reset({
+        date: format(new Date(), 'yyyy-MM-dd'),
+        cropId: '',
+        description: ''
+      });
     }
   }, [edit, activity, setValue, reset]);
 
@@ -63,10 +68,11 @@ export function ActivityForm({ crops }: { crops: CropData[] }) {
         method: edit ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
-          // Add authorization header if needed
-          // "Authorization": `Bearer ${yourAuthToken}`
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          date: new Date(data.date).toISOString()
+        }),
       });
 
       if (!response.ok) {
@@ -110,19 +116,23 @@ export function ActivityForm({ crops }: { crops: CropData[] }) {
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-6">
         {/* Crop Selection */}
         <div className="space-y-2">
-          <label htmlFor="cropId" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="cropId" className="block text-sm font-medium text-green-800">
             Crop <span className="text-red-500">*</span>
           </label>
           <Select
             onValueChange={(value) => setValue("cropId", value)}
             value={watch("cropId")}
           >
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full border-green-300 focus:border-green-500">
               <SelectValue placeholder="Select a crop" />
             </SelectTrigger>
             <SelectContent>
               {crops.map((crop) => (
-                <SelectItem key={crop._id} value={crop._id as string}>
+                <SelectItem 
+                  key={crop._id} 
+                  value={crop._id as string}
+                  className="hover:bg-green-50"
+                >
                   {crop.name}
                 </SelectItem>
               ))}
@@ -135,14 +145,15 @@ export function ActivityForm({ crops }: { crops: CropData[] }) {
 
         {/* Date Input */}
         <div className="space-y-2">
-          <label htmlFor="date" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="date" className="block text-sm font-medium text-green-800">
             Date <span className="text-red-500">*</span>
           </label>
           <Input
             id="date"
             type="date"
             {...register("date")}
-            className="w-full"
+            className="w-full border-green-300 focus:border-green-500"
+            max={format(new Date(), 'yyyy-MM-dd')}
           />
           {errors.date && (
             <p className="text-sm text-red-600">{errors.date.message}</p>
@@ -151,14 +162,14 @@ export function ActivityForm({ crops }: { crops: CropData[] }) {
 
         {/* Description */}
         <div className="space-y-2">
-          <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="description" className="block text-sm font-medium text-green-800">
             Description <span className="text-red-500">*</span>
           </label>
           <Textarea
             id="description"
             {...register("description")}
-            className="w-full min-h-[100px]"
-            placeholder="Enter activity details..."
+            className="w-full min-h-[100px] border-green-300 focus:border-green-500"
+            placeholder="Describe the activity (e.g., 'Planted tomatoes in field B')"
           />
           {errors.description && (
             <p className="text-sm text-red-600">{errors.description.message}</p>
@@ -171,13 +182,15 @@ export function ActivityForm({ crops }: { crops: CropData[] }) {
             type="button"
             variant="outline"
             onClick={handleClose}
+            className="border-green-600 text-green-800 hover:bg-green-50"
             disabled={isLoading}
           >
             Cancel
           </Button>
           <Button
             type="submit"
-            disabled={isLoading || !isDirty}
+            className="bg-green-600 hover:bg-green-700"
+            disabled={isLoading || !isDirty || !isValid}
           >
             {isLoading ? (
               <>
