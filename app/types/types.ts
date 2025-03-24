@@ -6,3 +6,10 @@ export type CropData = {
     harvestDate: Date|string    ;
     status: "Planting" | "Growing" | "Harvesting";
 }
+export type ActivityData = {
+    _id?:number|string;
+    description: string;
+    date: Date;
+    cropId: string;
+    activity?:string;
+}

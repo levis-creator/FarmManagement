@@ -1,12 +1,13 @@
 import { atom } from "jotai";
 import { ActivityFormData } from "~/schemas/ActivitySchema";
 import { API, ENDPOINTS } from "~/lib/ApiUrl"; // Assuming you have an API utility
+import { ActivityData } from "~/types/types";
 
 const url = API.EXTERNAL + ENDPOINTS.ACTIVITIES; // Define the API endpoint
 
 // Atoms
 export const activitiesAtom = atom<ActivityFormData[]>([]); // List of activities
-export const activityAtom = atom<ActivityFormData | null>(null); // Single activity
+export const activityAtom = atom<ActivityData | null>(null); // Single activity
 export const isLoadingAtom = atom<boolean>(false); // Loading state
 export const errorAtom = atom<string | null>(null); // Error state
 

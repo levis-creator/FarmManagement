@@ -88,54 +88,50 @@ const Actions = ({ crop }: { crop: CropData }) => {
   const setCropEdit = useSetAtom(cropAtom);
   const handleFormOpen = useSetAtom(openForm);
   const setEdit = useSetAtom(editForm);
-  const refreshData = useSetAtom(fetchCropsAtom)
-  const [isOpen, setIsOpen] = useState(false)
+  const refreshData = useSetAtom(fetchCropsAtom);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+
   const handleEdit = () => {
     setCropEdit(crop);
     setEdit(true);
     handleFormOpen();
-    // Implement your edit logic here
   };
 
   const handleDelete = async () => {
-    const url = `${API.EXTERNAL + ENDPOINTS.CROPS}/${crop._id}`
+    const url = `${API.EXTERNAL + ENDPOINTS.CROPS}/${crop._id}`;
     const res = await fetch(url, {
-      method: "DELETE"
-    })
+      method: "DELETE",
+    });
     if (res.ok) {
-      refreshData()
-      handleClose()
+      refreshData(); // Refresh the data after deletion
+      setIsDeleteDialogOpen(false); // Close the delete dialog
     }
   };
-  const handleClose = () => {
-    setIsOpen(false)
-  }
-  const handleOpen = () => {
-    setIsOpen(true)
 
-  }
   return (
     <>
+      {/* Delete Dialog */}
       <DeleteDialog
-        isOpen={isOpen}
-        onClose={handleClose}
-        onDelete={handleDelete} itemName={crop.name} />
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        onDelete={handleDelete}
+        itemName={crop.name}
+      />
+
+      {/* Dropdown Menu */}
       <DropdownMenu>
-        {/* Use the Button directly as the trigger */}
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0" >
-            <div>
-              <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
-            </div>
+          <Button variant="ghost" className="h-8 w-8 p-0">
+            <span className="sr-only">Open menu</span>
+            <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
           <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
-          {/* Use the DeleteDialog component */}
-          <DropdownMenuItem onClick={handleOpen}>Delete</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)}>
+            Delete
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </>

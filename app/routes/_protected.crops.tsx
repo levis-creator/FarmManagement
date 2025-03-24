@@ -1,36 +1,44 @@
-import { useLoaderData } from "@remix-run/react"
-import { useAtom, useSetAtom } from "jotai"
-import { useEffect } from "react"
-import { PageHeader } from "~/components/common/PageHeader"
-import CropsForm from "~/components/forms/CropsForm"
-import { CropColumn } from "~/components/tables/columns/CropColumn"
-import { DataTable } from "~/components/tables/DataTable"
-import { Button } from "~/components/ui/button"
-import { cropsAtom } from "~/jotai/cropsAtom"
-import { openForm } from "~/jotai/uiAtoms"
-import { API, ENDPOINTS } from "~/lib/ApiUrl"
+import { useLoaderData } from "@remix-run/react";
+import { useAtom, useSetAtom } from "jotai";
+import { useEffect } from "react";
+import { PageHeader } from "~/components/common/PageHeader";
+import CropsForm from "~/components/forms/CropsForm";
+import { CropColumn } from "~/components/tables/columns/CropColumn";
+import { DataTable } from "~/components/tables/DataTable";
+import { Button } from "~/components/ui/button";
+import { cropsAtom } from "~/jotai/cropsAtom";
+import { openForm } from "~/jotai/uiAtoms";
+import { API, ENDPOINTS } from "~/lib/ApiUrl";
+import type { LoaderFunction } from "@remix-run/node";
 
-// Loader function to fetch crops data
-export async function loader() {
-  const url = API.EXTERNAL + ENDPOINTS.CROPS
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error("Failed to fetch crops data")
+// Define the loader function to fetch crops data
+export const loader: LoaderFunction = async () => {
+  const url = API.EXTERNAL + ENDPOINTS.CROPS;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Response("Failed to fetch crops data", { status: 500 });
+    }
+    const results = await res.json();
+    return results;
+  } catch (error) {
+    console.error("Error fetching crops data:", error);
+    throw new Response("Failed to fetch crops data", { status: 500 });
   }
-  const results = await res.json()
-  return Response.json(results)
-}
+};
 
-const Crops = () => {
-  const handleOpen = useSetAtom(openForm)
-  const [crops, setCrops] = useAtom(cropsAtom)
-  const data = useLoaderData<typeof loader>()
+export default function Crops() {
+  const handleOpen = useSetAtom(openForm);
+  const [crops, setCrops] = useAtom(cropsAtom);
+  const data = useLoaderData<typeof loader>();
 
   // Update the cropsAtom with the fetched data
   useEffect(() => {
-    setCrops(data)
-  }, [data, setCrops])
-  
+    if (data) {
+      setCrops(data);
+    }
+  }, [data, setCrops]);
+
   return (
     <>
       <PageHeader
@@ -50,7 +58,5 @@ const Crops = () => {
       {/* Render the CropsForm */}
       <CropsForm />
     </>
-  )
+  );
 }
-
-export default Crops

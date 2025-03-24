@@ -3,7 +3,7 @@ import { z } from "zod";
 // Define the schema for the form
 export const ActivitySchema = z.object({
   description: z.string().min(1, "Description is required"),
-  date: z.date(),
+  date:  z.union([z.date(), z.coerce.date()]),
   cropId: z.string().min(1, "Crop is required"), // Crop ID as a string
 });
 
