@@ -1,7 +1,6 @@
 import { atom } from "jotai";
 import { API, ENDPOINTS } from "~/lib/ApiUrl";
-import { CropFormData } from "~/schemas/CropSchema";
-import { CropData } from "~/types/types";
+import { CropData, DbResponse } from "~/types/types";
 
 const url = API.EXTERNAL + ENDPOINTS.CROPS;
 
@@ -23,8 +22,8 @@ export const fetchCropsAtom = atom(
       if (!res.ok) {
         throw new Error(`Failed to fetch crops: ${res.statusText}`);
       }
-      const results: CropFormData[] = await res.json(); // Assuming the API returns an array of CropFormData
-      set(cropsAtom, results); // Update cropsAtom with the fetched data
+      const results: DbResponse<CropData>= await res.json(); // Assuming the API returns an array of CropFormData
+      set(cropsAtom, results.data as CropData[]); // Update cropsAtom with the fetched data
     } catch (error) {
       set(errorAtom, error instanceof Error ? error.message : "An unknown error occurred"); // Set error state
     } finally {

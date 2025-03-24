@@ -1,12 +1,13 @@
 import { atom } from "jotai";
 import { ResourceFormData } from "~/schemas/ResourceSchema";
 import { API, ENDPOINTS } from "~/lib/ApiUrl"; // Assuming you have an API utility
+import { DbResponse, ResourceData } from "~/types/types";
 
 const url = API.EXTERNAL + ENDPOINTS.RESOURCES; // Define the API endpoint
 
 // Atoms
-export const resourcesAtom = atom<ResourceFormData[]>([]); // List of resources
-export const resourceAtom = atom<ResourceFormData | null>(null); // Single resource
+export const resourcesAtom = atom<ResourceData[]>([]); // List of resources
+export const resourceAtom = atom<ResourceData | null>(null); // Single resource
 export const isLoadingAtom = atom<boolean>(false); // Loading state
 export const errorAtom = atom<string | null>(null); // Error state
 
@@ -22,8 +23,8 @@ export const fetchResourcesAtom = atom(
       if (!res.ok) {
         throw new Error(`Failed to fetch resources: ${res.statusText}`);
       }
-      const results: ResourceFormData[] = await res.json(); // Assuming the API returns an array of ResourceFormData
-      set(resourcesAtom, results); // Update resourcesAtom with the fetched data
+      const results: DbResponse<ResourceData>= await res.json(); // Assuming the API returns an array of ResourceFormData
+      set(resourcesAtom, results.data as ResourceData[]); // Update resourcesAtom with the fetched data
     } catch (error) {
       set(errorAtom, error instanceof Error ? error.message : "An unknown error occurred"); // Set error state
     } finally {

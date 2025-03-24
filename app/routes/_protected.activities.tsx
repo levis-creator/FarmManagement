@@ -13,9 +13,9 @@ import { activitiesAtom, fetchActivitiesAtom } from "~/jotai/activitiesAtom";
 import { cropsAtom, fetchCropsAtom } from "~/jotai/cropsAtom";
 import { openForm } from "~/jotai/uiAtoms";
 import { API, ENDPOINTS } from "~/lib/ApiUrl";
-import type { ActivityData, CropData } from "~/types/types";
+import type { ActivityData, CropData, DbResponse } from "~/types/types";
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async () => {
   const cropsUrl = API.EXTERNAL + ENDPOINTS.CROPS;
   const activitiesUrl = API.EXTERNAL + ENDPOINTS.ACTIVITIES;
 
@@ -24,14 +24,12 @@ export const loader: LoaderFunction = async ({ request }) => {
       fetch(cropsUrl, {
         headers: {
           "Content-Type": "application/json",
-          // Add authorization if needed
-          // "Authorization": `Bearer ${getAuthToken(request)}`
         },
       }),
       fetch(activitiesUrl, {
         headers: {
           "Content-Type": "application/json",
-          // Add authorization if needed
+
         },
       }),
     ]);
@@ -46,7 +44,7 @@ export const loader: LoaderFunction = async ({ request }) => {
       cropResponse.json(),
       activitiesResponse.json(),
     ]);
-
+    console.log(crops)
     return { crops, activities };
   } catch (error) {
     console.error("Loader error:", error);
@@ -56,9 +54,10 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 export default function Activities() {
   const { crops, activities } = useLoaderData<{
-    crops: CropData[];
-    activities: ActivityData[];
+    crops: DbResponse<CropData>;
+    activities: DbResponse<ActivityData>;
   }>();
+
   const handleOpen = useSetAtom(openForm);
   const [activitiesData, setActivityData] = useAtom(activitiesAtom);
   const [cropData, setCrops] = useAtom(cropsAtom);
@@ -68,9 +67,10 @@ export default function Activities() {
 
   // Initialize atoms with loader data
   useEffect(() => {
-    setActivityData(activities);
-    setCrops(crops);
+    setActivityData(activities.data as ActivityData[]);
+    setCrops(crops.data as CropData[]);
   }, [setActivityData, activities, setCrops, crops]);
+
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -130,7 +130,7 @@ export default function Activities() {
           <DataTable
             columns={ActivityColumn}
             data={activitiesData}
-            filterColumn="description"      
+            filterColumn="description"
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-12">

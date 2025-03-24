@@ -2,8 +2,8 @@ export type CropData = {
     _id?:number|string;
     name: string;
     variety: string;
-    plantingDate: Date|string;
-    harvestDate: Date|string    ;
+    plantingDate: Date | string;
+    harvestDate: Date | string    ;
     status: "Planting" | "Growing" | "Harvesting";
 }
 export type ActivityData = {
@@ -19,4 +19,8 @@ export type ResourceData = {
     quantity: number;
     type: string;
     cropId: string|CropData;
+}
+export type DbResponse<T>={
+    success:boolean;
+    data:T[]|T
 }

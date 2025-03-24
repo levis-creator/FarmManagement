@@ -5,4 +5,5 @@ export const ENDPOINTS={
     CROPS:"/crops",
     RESOURCES:"/resources",
     ACTIVITIES:"/activities"
+    
 }

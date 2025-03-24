@@ -11,9 +11,10 @@ import { ResourceFormData, ResourceSchema } from "~/schemas/ResourceSchema";
 import { Modal } from "../common/Modal";
 import { API, ENDPOINTS } from "~/lib/ApiUrl";
 import { fetchResourcesAtom, resourceAtom } from "~/jotai/resourcesAtom";
+import { CropData } from "~/types/types";
 
 type ResourceFormProps = {
-  crops: { _id: string; name: string }[];
+  crops: CropData[];
 };
 
 export function ResourceForm({ crops }: ResourceFormProps) {

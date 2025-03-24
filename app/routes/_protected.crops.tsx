@@ -12,6 +12,7 @@ import { API, ENDPOINTS } from "~/lib/ApiUrl";
 import type { LoaderFunction } from "@remix-run/node";
 import { toast } from "~/hooks/use-toast";
 import CropsForm from "~/components/forms/CropsForm";
+import { CropData, DbResponse } from "~/types/types";
 
 export const loader: LoaderFunction = async () => {
   const url = API.EXTERNAL + ENDPOINTS.CROPS;
@@ -19,8 +20,6 @@ export const loader: LoaderFunction = async () => {
     const response = await fetch(url, {
       headers: {
         "Content-Type": "application/json",
-        // Add authorization if needed
-        // "Authorization": `Bearer ${getAuthToken(request)}`
       },
     });
 
@@ -28,7 +27,7 @@ export const loader: LoaderFunction = async () => {
       throw new Error(`Failed to fetch crops: ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: DbResponse<CropData> = await response.json();
     return data;
   } catch (error) {
     console.error("Loader error:", error);
@@ -40,15 +39,15 @@ export default function Crops() {
   const handleOpen = useSetAtom(openForm);
   const [crops, setCrops] = useAtom(cropsAtom);
   const refreshCrops = useSetAtom(fetchCropsAtom);
-  const data = useLoaderData<typeof loader>();
+  const cropsDb = useLoaderData<typeof loader>();
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Initialize crops atom with loader data
   useEffect(() => {
-    if (data) {
-      setCrops(data);
+    if (cropsDb) {
+      setCrops(cropsDb.data);
     }
-  }, [data, setCrops]);
+  }, [cropsDb, setCrops]);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);

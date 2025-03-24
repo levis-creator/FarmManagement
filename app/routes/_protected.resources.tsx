@@ -12,10 +12,10 @@ import { cropsAtom, fetchCropsAtom } from "~/jotai/cropsAtom";
 import { fetchResourcesAtom, resourcesAtom } from "~/jotai/resourcesAtom";
 import { openForm } from "~/jotai/uiAtoms";
 import { API, ENDPOINTS } from "~/lib/ApiUrl";
-import type { CropData, ResourceData } from "~/types/types";
 import { ResourceColumns } from '~/components/tables/columns/ResourceColumn';
+import { DbResponse, CropData, ResourceData } from '../types/types';
 
-export const loader: LoaderFunction = async ({ request }) => {
+export const loader: LoaderFunction = async () => {
   const cropsUrl = API.EXTERNAL + ENDPOINTS.CROPS;
   const resourcesUrl = API.EXTERNAL + ENDPOINTS.RESOURCES;
 
@@ -24,14 +24,11 @@ export const loader: LoaderFunction = async ({ request }) => {
       fetch(cropsUrl, {
         headers: {
           "Content-Type": "application/json",
-          // Add authorization if needed
-          // "Authorization": `Bearer ${getAuthToken(request)}`
         },
       }),
       fetch(resourcesUrl, {
         headers: {
           "Content-Type": "application/json",
-          // Add authorization if needed
         },
       }),
     ]);
@@ -56,8 +53,8 @@ export const loader: LoaderFunction = async ({ request }) => {
 
 export default function Resources() {
   const { crops, resources } = useLoaderData<{
-    crops: CropData[];
-    resources: ResourceData[];
+    crops: DbResponse<CropData>;
+    resources: DbResponse<ResourceData>;
   }>();
   const handleOpen = useSetAtom(openForm);
   const [resourcesData, setResourceData] = useAtom(resourcesAtom);
@@ -65,11 +62,11 @@ export default function Resources() {
   const refreshResources = useSetAtom(fetchResourcesAtom);
   const refreshCrops = useSetAtom(fetchCropsAtom);
   const [isRefreshing, setIsRefreshing] = useState(false);
-console.log(resources)
+
   // Initialize atoms with loader data
   useEffect(() => {
-    setResourceData(resources);
-    setCrops(crops);
+    setResourceData(resources.data as ResourceData[]);
+    setCrops(crops.data as CropData[]);
 
   }, [setResourceData, resources, setCrops, crops]);
 

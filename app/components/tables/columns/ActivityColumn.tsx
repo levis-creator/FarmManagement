@@ -70,12 +70,13 @@ const ActivityActions = ({ activity }: { activity: ActivityData }) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = () => {
+    const crop = activity.cropId as CropData
     const editData = {
       ...activity,
-      cropId: activity.cropId._id,
+      cropId: crop._id as string,
       date: format(new Date(activity.date), "yyyy-MM-dd")
     };
-    setActivityEdit(editData);
+    setActivityEdit(editData as unknown as ActivityData);
     setEdit(true);
     handleFormOpen();
   };
@@ -88,8 +89,6 @@ const ActivityActions = ({ activity }: { activity: ActivityData }) => {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",
-          // Add authorization header if needed
-          // "Authorization": `Bearer ${yourAuthToken}`
         },
       });
 
@@ -104,7 +103,7 @@ const ActivityActions = ({ activity }: { activity: ActivityData }) => {
         description: "Activity deleted successfully",
         variant: "default",
       });
-      
+
       refreshData(); // Refresh the data
     } catch (error) {
       console.error("Delete error:", error);
@@ -142,8 +141,8 @@ const ActivityActions = ({ activity }: { activity: ActivityData }) => {
             <Pencil className="mr-2 h-4 w-4" />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => setIsDeleteDialogOpen(true)} 
+          <DropdownMenuItem
+            onClick={() => setIsDeleteDialogOpen(true)}
             className="cursor-pointer text-red-600 focus:text-red-600"
           >
             <Trash2 className="mr-2 h-4 w-4" />

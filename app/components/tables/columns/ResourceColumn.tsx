@@ -1,6 +1,8 @@
 import { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useSetAtom } from "jotai";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { DeleteDialog } from "~/components/common/DeleteDialog";
 import { Button } from "~/components/ui/button";
 import {
   DropdownMenu,
@@ -9,15 +11,13 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
-import { DeleteDialog } from "~/components/common/DeleteDialog";
-import { ResourceFormData } from "~/schemas/ResourceSchema";
-import { API, ENDPOINTS } from "~/lib/ApiUrl";
-import { editForm, openForm } from "~/jotai/uiAtoms";
-import { useState } from "react";
 import { toast } from "~/hooks/use-toast";
 import { fetchResourcesAtom, resourceAtom } from "~/jotai/resourcesAtom";
+import { editForm, openForm } from "~/jotai/uiAtoms";
+import { API, ENDPOINTS } from "~/lib/ApiUrl";
+import { ResourceData } from "~/types/types";
 
-export const ResourceColumns: ColumnDef<ResourceFormData>[] = [
+export const ResourceColumns: ColumnDef<ResourceData>[] = [
   {
     accessorKey: "name",
     header: "Name",
@@ -61,7 +61,7 @@ export const ResourceColumns: ColumnDef<ResourceFormData>[] = [
   },
 ];
 
-const ResourceActions = ({ resource }: { resource: ResourceFormData }) => {
+const ResourceActions = ({ resource }: { resource: ResourceData }) => {
   const setResourceEdit = useSetAtom(resourceAtom);
   const handleFormOpen = useSetAtom(openForm);
   const setEdit = useSetAtom(editForm);
@@ -130,8 +130,8 @@ const ResourceActions = ({ resource }: { resource: ResourceFormData }) => {
             <Pencil className="mr-2 h-4 w-4" />
             Edit
           </DropdownMenuItem>
-          <DropdownMenuItem 
-            onClick={() => setIsDeleteDialogOpen(true)} 
+          <DropdownMenuItem
+            onClick={() => setIsDeleteDialogOpen(true)}
             className="cursor-pointer text-red-600 focus:text-red-600"
           >
             <Trash2 className="mr-2 h-4 w-4" />
