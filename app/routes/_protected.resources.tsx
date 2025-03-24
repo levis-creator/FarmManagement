@@ -1,29 +1,147 @@
-import { useSetAtom } from "jotai"
-import { PageHeader } from "~/components/common/PageHeader"
-import { ResourceForm } from "~/components/forms/ResourceForm"
-import { Button } from "~/components/ui/button"
-import { openForm } from "~/jotai/uiAtoms"
+import type { LoaderFunction } from "@remix-run/node";
+import { useLoaderData } from "@remix-run/react";
+import { useAtom, useSetAtom } from "jotai";
+import { Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { PageHeader } from "~/components/common/PageHeader";
+import { ResourceForm } from "~/components/forms/ResourceForm";
+import { DataTable } from "~/components/tables/DataTable";
+import { Button } from "~/components/ui/button";
+import { toast } from "~/hooks/use-toast";
+import { cropsAtom, fetchCropsAtom } from "~/jotai/cropsAtom";
+import { fetchResourcesAtom, resourcesAtom } from "~/jotai/resourcesAtom";
+import { openForm } from "~/jotai/uiAtoms";
+import { API, ENDPOINTS } from "~/lib/ApiUrl";
+import type { CropData, ResourceData } from "~/types/types";
+import { ResourceColumns } from '~/components/tables/columns/ResourceColumn';
 
-const Resources = () => {
-  const handleOpen = useSetAtom(openForm)
-  const crops = [
-    { _id: "1", name: "Crop 1" },
-    { _id: "2", name: "Crop 2" },
-    { _id: "3", name: "Crop 3" },
-  ];
+export const loader: LoaderFunction = async ({ request }) => {
+  const cropsUrl = API.EXTERNAL + ENDPOINTS.CROPS;
+  const resourcesUrl = API.EXTERNAL + ENDPOINTS.RESOURCES;
+
+  try {
+    const [cropResponse, resourcesResponse] = await Promise.all([
+      fetch(cropsUrl, {
+        headers: {
+          "Content-Type": "application/json",
+          // Add authorization if needed
+          // "Authorization": `Bearer ${getAuthToken(request)}`
+        },
+      }),
+      fetch(resourcesUrl, {
+        headers: {
+          "Content-Type": "application/json",
+          // Add authorization if needed
+        },
+      }),
+    ]);
+
+    if (!cropResponse.ok || !resourcesResponse.ok) {
+      throw new Error(
+        `Failed to fetch data: ${cropResponse.status} ${resourcesResponse.status}`
+      );
+    }
+
+    const [crops, resources] = await Promise.all([
+      cropResponse.json(),
+      resourcesResponse.json(),
+    ]);
+
+    return { crops, resources };
+  } catch (error) {
+    console.error("Loader error:", error);
+    throw new Response("Failed to load resources data", { status: 500 });
+  }
+};
+
+export default function Resources() {
+  const { crops, resources } = useLoaderData<{
+    crops: CropData[];
+    resources: ResourceData[];
+  }>();
+  const handleOpen = useSetAtom(openForm);
+  const [resourcesData, setResourceData] = useAtom(resourcesAtom);
+  const [cropData, setCrops] = useAtom(cropsAtom);
+  const refreshResources = useSetAtom(fetchResourcesAtom);
+  const refreshCrops = useSetAtom(fetchCropsAtom);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+console.log(resources)
+  // Initialize atoms with loader data
+  useEffect(() => {
+    setResourceData(resources);
+    setCrops(crops);
+
+  }, [setResourceData, resources, setCrops, crops]);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.all([refreshResources(), refreshCrops()]);
+      toast({
+        title: "Success",
+        description: "Data refreshed successfully",
+        variant: "default",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh data",
+        variant: "destructive",
+      });
+      console.error("Refresh error:", error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   return (
     <>
-      <PageHeader title="Resources" actions={
-        <>
-          <Button className='bg-green-700 text-white' onClick={handleOpen}>
-            Add
-          </Button>
-        </>
+      <PageHeader
+        title="Resources"
+        actions={
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              {isRefreshing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Refreshing...
+                </>
+              ) : (
+                "Refresh Data"
+              )}
+            </Button>
+            <Button
+              className="bg-green-700 hover:bg-green-800 text-white"
+              onClick={handleOpen}
+            >
+              Add Resource
+            </Button>
+          </div>
+        }
+      />
 
-      } />
-      <ResourceForm crops={crops} />
-      Resources</>
-  )
+      <ResourceForm crops={cropData} />
+
+      <div className="container mx-auto py-4">
+        {resourcesData && resourcesData.length > 0 ? (
+          <DataTable
+            columns={ResourceColumns}
+            data={resourcesData}
+            filterColumn="name"
+          />
+        ) : (
+          <div className="flex flex-col items-center justify-center py-12">
+            <p className="text-gray-500 mb-4">No resources found</p>
+            <Button onClick={handleOpen} className="bg-green-700 text-white">
+              Create your first resource
+            </Button>
+          </div>
+        )}
+      </div>
+    </>
+  );
 }
-
-export default Resources

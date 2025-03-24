@@ -11,11 +11,11 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { DeleteDialog } from "~/components/common/DeleteDialog";
 import { ResourceFormData } from "~/schemas/ResourceSchema";
-import { toast } from "~/components/ui/use-toast";
 import { API, ENDPOINTS } from "~/lib/ApiUrl";
-import { fetchResourcesAtom, resourceAtom } from "~/jotai/resourceAtoms";
 import { editForm, openForm } from "~/jotai/uiAtoms";
 import { useState } from "react";
+import { toast } from "~/hooks/use-toast";
+import { fetchResourcesAtom, resourceAtom } from "~/jotai/resourcesAtom";
 
 export const ResourceColumns: ColumnDef<ResourceFormData>[] = [
   {

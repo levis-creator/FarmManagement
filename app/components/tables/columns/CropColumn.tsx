@@ -1,6 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { useSetAtom } from "jotai";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { DeleteDialog } from "~/components/common/DeleteDialog";
 import { Button } from "~/components/ui/button";
@@ -14,27 +14,40 @@ import {
 import { cropAtom, fetchCropsAtom } from "~/jotai/cropsAtom";
 import { editForm, openForm } from "~/jotai/uiAtoms";
 import { API, ENDPOINTS } from "~/lib/ApiUrl";
-import { CropFormData } from "~/schemas/CropSchema";
 import { CropData } from "~/types/types";
+import { format } from "date-fns";
+import { toast } from "~/hooks/use-toast";
 
-// Define the columns for the table
-export const CropColumn: ColumnDef<CropFormData>[] = [
+export const CropColumn: ColumnDef<CropData>[] = [
   {
     accessorKey: "name",
     header: "Name",
-    cell: ({ row }) => <div>{row.getValue("name")}</div>,
+    cell: ({ row }) => (
+      <div className="font-medium max-w-[200px] truncate" title={row.getValue("name")}>
+        {row.getValue("name")}
+      </div>
+    ),
   },
   {
     accessorKey: "variety",
     header: "Variety",
-    cell: ({ row }) => <div>{row.getValue("variety")}</div>,
+    cell: ({ row }) => (
+      <div className="max-w-[150px] truncate" title={row.getValue("variety")}>
+        {row.getValue("variety")}
+      </div>
+    ),
   },
   {
     accessorKey: "plantingDate",
     header: "Planting Date",
     cell: ({ row }) => {
       const date = new Date(row.getValue("plantingDate"));
-      return <div>{date.toLocaleDateString()}</div>;
+      return <div>{format(date, "PPP")}</div>;
+    },
+    sortingFn: (rowA, rowB) => {
+      const dateA = new Date(rowA.getValue("plantingDate")).getTime();
+      const dateB = new Date(rowB.getValue("plantingDate")).getTime();
+      return dateA - dateB;
     },
   },
   {
@@ -42,7 +55,12 @@ export const CropColumn: ColumnDef<CropFormData>[] = [
     header: "Harvest Date",
     cell: ({ row }) => {
       const date = new Date(row.getValue("harvestDate"));
-      return <div>{date.toLocaleDateString()}</div>;
+      return <div>{format(date, "PPP")}</div>;
+    },
+    sortingFn: (rowA, rowB) => {
+      const dateA = new Date(rowA.getValue("harvestDate")).getTime();
+      const dateB = new Date(rowB.getValue("harvestDate")).getTime();
+      return dateA - dateB;
     },
   },
   {
@@ -50,28 +68,24 @@ export const CropColumn: ColumnDef<CropFormData>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status: string = row.getValue("status");
-      let badgeColor = "";
-
-      // Assign different colors based on the status
-      switch (status) {
-        case "Planting":
-          badgeColor = "bg-blue-500 text-white";
-          break;
-        case "Growing":
-          badgeColor = "bg-green-500 text-white";
-          break;
-        case "Harvesting":
-          badgeColor = "bg-yellow-500 text-black";
-          break;
-        default:
-          badgeColor = "bg-gray-500 text-white";
-      }
+      const statusClasses = {
+        Planting: "bg-blue-100 text-blue-800",
+        Growing: "bg-green-100 text-green-800",
+        Harvesting: "bg-yellow-100 text-yellow-800",
+        Completed: "bg-purple-100 text-purple-800",
+        default: "bg-gray-100 text-gray-800"
+      };
+      
+      const className = statusClasses[status as keyof typeof statusClasses] || statusClasses.default;
 
       return (
-        <div className={`px-3 py-1 rounded-full text-sm ${badgeColor}`}>
+        <div className={`px-3 py-1 rounded-full text-xs font-medium ${className}`}>
           {status}
         </div>
       );
+    },
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id));
     },
   },
   {
@@ -79,17 +93,18 @@ export const CropColumn: ColumnDef<CropFormData>[] = [
     enableHiding: false,
     cell: ({ row }) => {
       const crop = row.original;
-      return <Actions crop={crop} />;
+      return <CropActions crop={crop} />;
     },
   },
 ];
 
-const Actions = ({ crop }: { crop: CropData }) => {
+const CropActions = ({ crop }: { crop: CropData }) => {
   const setCropEdit = useSetAtom(cropAtom);
   const handleFormOpen = useSetAtom(openForm);
   const setEdit = useSetAtom(editForm);
   const refreshData = useSetAtom(fetchCropsAtom);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleEdit = () => {
     setCropEdit(crop);
@@ -98,27 +113,43 @@ const Actions = ({ crop }: { crop: CropData }) => {
   };
 
   const handleDelete = async () => {
-    const url = `${API.EXTERNAL + ENDPOINTS.CROPS}/${crop._id}`;
-    const res = await fetch(url, {
-      method: "DELETE",
-    });
-    if (res.ok) {
-      refreshData(); // Refresh the data after deletion
-      setIsDeleteDialogOpen(false); // Close the delete dialog
+    setIsDeleting(true);
+    try {
+      const url = `${API.EXTERNAL + ENDPOINTS.CROPS}/${crop._id}`;
+      const res = await fetch(url, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Failed to delete crop");
+
+      toast({
+        title: "Success",
+        description: "Crop deleted successfully",
+        variant: "default",
+      });
+      refreshData();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete crop",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
     }
   };
 
   return (
     <>
-      {/* Delete Dialog */}
       <DeleteDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
         onDelete={handleDelete}
         itemName={crop.name}
+        isLoading={isDeleting}
       />
 
-      {/* Dropdown Menu */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -126,10 +157,17 @@ const Actions = ({ crop }: { crop: CropData }) => {
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
+        <DropdownMenuContent align="end" className="w-40">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem onClick={handleEdit}>Edit</DropdownMenuItem>
-          <DropdownMenuItem onClick={() => setIsDeleteDialogOpen(true)}>
+          <DropdownMenuItem onClick={handleEdit} className="cursor-pointer">
+            <Pencil className="mr-2 h-4 w-4" />
+            Edit
+          </DropdownMenuItem>
+          <DropdownMenuItem 
+            onClick={() => setIsDeleteDialogOpen(true)} 
+            className="cursor-pointer text-red-600 focus:text-red-600"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>

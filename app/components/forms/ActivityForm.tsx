@@ -13,33 +13,27 @@ import { Textarea } from "../ui/textarea";
 import { CropData } from "~/types/types";
 import { API, ENDPOINTS } from "~/lib/ApiUrl";
 import { activityAtom, fetchActivitiesAtom } from "~/jotai/activitiesAtom";
+import { format, parseISO } from "date-fns";
+import { toast } from "~/hooks/use-toast";
 
-// Helper function to convert ISO date to YYYY-MM-DD format
-const formatDateForInput = (isoDateString: string) => {
-  const date = new Date(isoDateString);
-  if (isNaN(date.getTime())) return ""; // Return empty string for invalid dates
-  return date.toISOString().split("T")[0];
-};
-
-type ActivityFormProps = {
-  crops: CropData[]; // List of crops for the dropdown
-};
-
-export function ActivityForm({ crops }: ActivityFormProps) {
+export function ActivityForm({ crops }: { crops: CropData[] }) {
   const {
     register,
     handleSubmit,
     setValue,
     reset,
     watch,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ActivityFormData>({
     resolver: zodResolver(ActivitySchema),
     defaultValues: {
-      date: new Date().toISOString().split("T")[0], // Default to today's date
+      date: format(new Date(), 'yyyy-MM-dd'), // Default to today's date
+      cropId: '',
+      description: ''
     },
   });
 
+  // State management
   const isOpen = useAtomValue(formIsOpen);
   const close = useSetAtom(closeForm);
   const refreshData = useSetAtom(fetchActivitiesAtom);
@@ -50,11 +44,13 @@ export function ActivityForm({ crops }: ActivityFormProps) {
   // Initialize form for editing
   useEffect(() => {
     if (edit && activity) {
-      setValue("cropId", activity.cropId);
-      setValue("date", formatDateForInput(activity.date));
+      setValue("cropId", activity.cropId as string);
+      setValue("date", format(parseISO(activity.date), 'yyyy-MM-dd'));
       setValue("description", activity.description);
+    } else {
+      reset(); // Reset form when not in edit mode
     }
-  }, [edit, activity, setValue]);
+  }, [edit, activity, setValue, reset]);
 
   const onSubmit: SubmitHandler<ActivityFormData> = async (data) => {
     setIsLoading(true);
@@ -67,19 +63,32 @@ export function ActivityForm({ crops }: ActivityFormProps) {
         method: edit ? "PUT" : "POST",
         headers: {
           "Content-Type": "application/json",
+          // Add authorization header if needed
+          // "Authorization": `Bearer ${yourAuthToken}`
         },
         body: JSON.stringify(data),
       });
 
-      if (response.ok) {
-        console.log(`Activity ${edit ? "updated" : "added"} successfully!`);
-        refreshData();
-        handleClose();
-      } else {
-        console.error(`Failed to ${edit ? "update" : "add"} activity`);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save activity');
       }
+
+      toast({
+        title: "Success",
+        description: `Activity ${edit ? "updated" : "created"} successfully`,
+        variant: "default",
+      });
+      
+      refreshData();
+      handleClose();
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Submission error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save activity",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -93,18 +102,22 @@ export function ActivityForm({ crops }: ActivityFormProps) {
   };
 
   return (
-    <Modal isOpen={isOpen} title={edit ? "Edit Activity" : "Add Activity"} onClose={handleClose}>
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 max-w-md mx-auto p-6">
-        {/* Crop Input */}
-        <div>
+    <Modal 
+      isOpen={isOpen} 
+      title={edit ? "Edit Activity" : "Add Activity"} 
+      onClose={handleClose}
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 p-6">
+        {/* Crop Selection */}
+        <div className="space-y-2">
           <label htmlFor="cropId" className="block text-sm font-medium text-gray-700">
-            Crop
+            Crop <span className="text-red-500">*</span>
           </label>
           <Select
             onValueChange={(value) => setValue("cropId", value)}
             value={watch("cropId")}
           >
-            <SelectTrigger className="mt-1 block w-full border-green-300 focus:border-green-500 focus:ring-green-500">
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a crop" />
             </SelectTrigger>
             <SelectContent>
@@ -116,57 +129,62 @@ export function ActivityForm({ crops }: ActivityFormProps) {
             </SelectContent>
           </Select>
           {errors.cropId && (
-            <p className="text-sm text-red-600 mt-1">{errors.cropId.message}</p>
+            <p className="text-sm text-red-600">{errors.cropId.message}</p>
           )}
         </div>
 
         {/* Date Input */}
-        <div>
+        <div className="space-y-2">
           <label htmlFor="date" className="block text-sm font-medium text-gray-700">
-            Date
+            Date <span className="text-red-500">*</span>
           </label>
           <Input
             id="date"
             type="date"
             {...register("date")}
-            className="mt-1 block w-full border-green-300 focus:border-green-500 focus:ring-green-500"
+            className="w-full"
           />
           {errors.date && (
-            <p className="text-sm text-red-600 mt-1">{errors.date.message}</p>
+            <p className="text-sm text-red-600">{errors.date.message}</p>
           )}
         </div>
 
-        {/* Description Input */}
-        <div>
+        {/* Description */}
+        <div className="space-y-2">
           <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-            Description
+            Description <span className="text-red-500">*</span>
           </label>
           <Textarea
             id="description"
             {...register("description")}
-            className="mt-1 block w-full border-green-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm p-2"
-            rows={4}
+            className="w-full min-h-[100px]"
+            placeholder="Enter activity details..."
           />
           {errors.description && (
-            <p className="text-sm text-red-600 mt-1">{errors.description.message}</p>
+            <p className="text-sm text-red-600">{errors.description.message}</p>
           )}
         </div>
 
-        {/* Submit Button */}
-        <div>
+        {/* Form Actions */}
+        <div className="flex justify-end gap-3 pt-4">
           <Button
-            type="submit"
-            className="w-full bg-green-600 hover:bg-green-700"
+            type="button"
+            variant="outline"
+            onClick={handleClose}
             disabled={isLoading}
           >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            disabled={isLoading || !isDirty}
+          >
             {isLoading ? (
-              <div className="flex items-center justify-center">
-                <Loader2 className="h-5 w-5 animate-spin mr-2" />
-                {edit ? "Saving..." : "Adding..."}
-              </div>
-            ) : (
-              edit ? "Save Changes" : "Add Activity"
-            )}
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {edit ? "Saving..." : "Creating..."}
+              </>
+            ) : edit ? "Save Changes" : "Create Activity"}
           </Button>
         </div>
       </form>

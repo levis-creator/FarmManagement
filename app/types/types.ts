@@ -10,6 +10,13 @@ export type ActivityData = {
     _id?:number|string;
     description: string;
     date: Date;
-    cropId: string;
+    cropId: string|CropData;
     activity?:string;
+}
+export type ResourceData = { 
+    _id?:number|string;
+    name: string;
+    quantity: number;
+    type: string;
+    cropId: string|CropData;
 }
