@@ -1,5 +1,5 @@
 export const API={
-    EXTERNAL: "http://localhost:5000"
+    EXTERNAL: "https://farmmanagmentbackend.onrender.com/activities"
 }
 export const ENDPOINTS={
     CROPS:"/crops",
