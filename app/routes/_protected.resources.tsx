@@ -128,7 +128,6 @@ export default function Resources() {
           <DataTable
             columns={ResourceColumns}
             data={resourcesData}
-            filterColumn="name"
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-12">

@@ -105,7 +105,6 @@ export default function Crops() {
           <DataTable
             columns={CropColumn}
             data={crops}
-            filterColumn="name"
 
           />
         ) : (
