@@ -2,6 +2,8 @@ import { atom } from "jotai";
 import { ActivityFormData } from "~/schemas/ActivitySchema";
 import { API, ENDPOINTS } from "~/lib/ApiUrl"; // Assuming you have an API utility
 import { ActivityData, DbResponse } from "~/types/types";
+import { statsAtom } from "./statsAtom";
+import { Clock } from "lucide-react";
 
 const url = `${API.EXTERNAL + ENDPOINTS.ACTIVITIES}/all`; // Define the API endpoint
 
@@ -23,8 +25,12 @@ export const fetchActivitiesAtom = atom(
       if (!res.ok) {
         throw new Error(`Failed to fetch activities: ${res.statusText}`);
       }
-      const results: DbResponse<ActivityData> = await res.json(); // Assuming the API returns an array of ActivityFormData
-      set(activitiesAtom, results.data as ActivityData[]); // Update activitiesAtom with the fetched data
+      const results: DbResponse<ActivityData> = await res.json(); 
+      const data= results.data as ActivityData[]
+      const stats= { title: "Upcoming Tasks", value: `${data.length}`, icon: Clock, trend: "3 due today" }
+
+      set(statsAtom, data=>[...data, stats])
+      set(activitiesAtom, data); // Update activitiesAtom with the fetched data
     } catch (error) {
       set(errorAtom, error instanceof Error ? error.message : "An unknown error occurred"); // Set error state
     } finally {

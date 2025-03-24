@@ -1,6 +1,8 @@
 import { atom } from "jotai";
 import { API, ENDPOINTS } from "~/lib/ApiUrl";
-import { CropData, DbResponse } from "~/types/types";
+import { CropData, DbResponse, Stats } from "~/types/types";
+import { statsAtom } from "./statsAtom";
+import { Sprout, Tractor } from "lucide-react";
 
 const url = API.EXTERNAL + ENDPOINTS.CROPS;
 
@@ -12,7 +14,7 @@ export const errorAtom = atom<string | null>(null); // Error state
 
 // Async action to fetch crops
 export const fetchCropsAtom = atom(
-  null, // No read function (this atom is write-only)
+  null, // No read function (write-only atom)
   async (get, set) => {
     set(isLoadingAtom, true); // Set loading state to true
     set(errorAtom, null); // Reset error state
@@ -22,12 +24,20 @@ export const fetchCropsAtom = atom(
       if (!res.ok) {
         throw new Error(`Failed to fetch crops: ${res.statusText}`);
       }
-      const results: DbResponse<CropData>= await res.json(); // Assuming the API returns an array of CropFormData
-      set(cropsAtom, results.data as CropData[]); // Update cropsAtom with the fetched data
+
+      const results: DbResponse<CropData> = await res.json(); 
+
+      const data=results.data as CropData[]
+      const stats:Stats= {title: "Total Crops", value: `${data.length}`, icon: Sprout, trend: "↑ 12% from last month" }
+      const harvest:Stats={ title: "Ready for Harvest", value: `${data.length}`, icon: Tractor, trend: "Next week" }
+
+      set(cropsAtom, data); 
+
+      set(statsAtom, (data)=>[...data, stats, harvest ])
     } catch (error) {
-      set(errorAtom, error instanceof Error ? error.message : "An unknown error occurred"); // Set error state
+      set(errorAtom, error instanceof Error ? error.message : "An unknown error occurred");
     } finally {
-      set(isLoadingAtom, false); // Set loading state to false
+      set(isLoadingAtom, false);
     }
   }
 );

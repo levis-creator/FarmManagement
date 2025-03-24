@@ -1,3 +1,5 @@
+import { LucideIcon } from "lucide-react";
+
 export type CropData = {
     _id?:number|string;
     name: string;
@@ -23,4 +25,10 @@ export type ResourceData = {
 export type DbResponse<T>={
     success:boolean;
     data:T[]|T
+}
+export type Stats={
+    title: string;
+    value: string;
+    icon:LucideIcon;
+    trend:string;
 }
