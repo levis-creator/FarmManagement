@@ -1,5 +1,5 @@
 export const API={
-    EXTERNAL: process.env.API_URL
+    EXTERNAL: "http://localhost:5000"
 }
 export const ENDPOINTS={
     CROPS:"/crops",

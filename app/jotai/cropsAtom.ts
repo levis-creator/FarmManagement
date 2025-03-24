@@ -1,12 +1,13 @@
 import { atom } from "jotai";
 import { API, ENDPOINTS } from "~/lib/ApiUrl";
 import { CropFormData } from "~/schemas/CropSchema";
+import { CropData } from "~/types/types";
 
 const url = API.EXTERNAL + ENDPOINTS.CROPS;
 
 // Atoms
-export const cropsAtom = atom<CropFormData[]>([]); // List of crops
-export const cropAtom = atom<CropFormData | null>(null); // Single crop
+export const cropsAtom = atom<CropData[]>([]); // List of crops
+export const cropAtom = atom<CropData | null>(null); // Single crop
 export const isLoadingAtom = atom<boolean>(false); // Loading state
 export const errorAtom = atom<string | null>(null); // Error state
 

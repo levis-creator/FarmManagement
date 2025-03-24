@@ -4,8 +4,8 @@ import { z } from "zod";
 export const CropSchema = z.object({
   name: z.string().min(1, "Name is required"),
   variety: z.string().min(1, "Variety is required"),
-  plantingDate: z.date(),
-  harvestDate: z.date(),
+  plantingDate: z.union([z.date(), z.coerce.date()]),
+  harvestDate: z.union([z.date(), z.coerce.date()]),
   status: z.enum(["Planting", "Growing", "Harvesting"]),
 });
 
